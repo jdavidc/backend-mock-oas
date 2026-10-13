@@ -1,0 +1,135 @@
+openapi: 3.0.3
+info:
+  title: Petstore
+  version: 1.0.0
+servers:
+  - url: https://api.example.com/v1
+paths:
+  /pets:
+    get:
+      operationId: listPets
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100 }
+        - name: tags
+          in: query
+          schema:
+            type: array
+            items: { type: string }
+      responses:
+        '200':
+          description: A list of pets
+          headers:
+            X-Rate-Limit:
+              description: Requests per hour
+              schema: { type: integer }
+              example: 100
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Pet' }
+              example:
+                - { id: 1, name: Rex, tag: dog }
+                - { id: 2, name: Tom, tag: cat }
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { code: 500, message: Unexpected error }
+    post:
+      operationId: createPet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Pet' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pet' }
+              examples:
+                cat:
+                  value: { id: 10, name: Tom, tag: cat }
+                dog:
+                  value: { id: 11, name: Rex, tag: dog }
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { code: 400, message: Bad request }
+  /pets/mine:
+    get:
+      operationId: listMyPets
+      responses:
+        '200':
+          description: My pets
+          content:
+            application/json:
+              example: [{ id: 99, name: Mine }]
+  /pets/{petId}:
+    parameters:
+      - name: petId
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getPet
+      responses:
+        '200':
+          description: A pet
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pet' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { code: 404, message: Pet not found }
+    delete:
+      operationId: deletePet
+      responses:
+        '204':
+          description: Deleted
+  /categories/{id}:
+    get:
+      operationId: getCategory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: A category tree
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Category' }
+components:
+  schemas:
+    Pet:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer, readOnly: true }
+        name: { type: string }
+        tag: { type: string, nullable: true }
+        category: { $ref: '#/components/schemas/Category' }
+    Category:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, example: Mammals }
+        parent: { $ref: '#/components/schemas/Category' }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: integer }
+        message: { type: string }
